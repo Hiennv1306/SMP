@@ -1,16 +1,20 @@
 ﻿import { Card, Col, Row, Steps, Tag, Button, Alert, Select, message } from 'antd'
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '../../components/common/PageHeader'
 import { StatusTag } from '../../components/common/StatusTag'
 import { parentService } from '../../services/supabase/parent.service'
 import { enrollStudent } from '../../services/supabase/enrollment.service'
 
 function Enrollment() {
+  const navigate = useNavigate()
   const [children, setChildren] = useState([])
   const [availableClasses, setAvailableClasses] = useState([])
   const [studentId, setStudentId] = useState(null)
   const [classId, setClassId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [completedEnrollment, setCompletedEnrollment] = useState(null)
+  const [currentStep, setCurrentStep] = useState(0)
 
   const loadChildren = useCallback(async () => {
     const { data, error } = await parentService.getChildren()
@@ -82,8 +86,16 @@ function Enrollment() {
       return
     }
 
+    const enrolledClass = availableClasses.find((item) => item.id === classId)
+    setCompletedEnrollment({
+      studentId,
+      classId,
+      className: enrolledClass?.className || '',
+    })
+    setCurrentStep(2)
     message.success('Ghi danh thanh cong. Khong co hoc phi nao Duoc yeu cau.')
-    loadAvailableClasses(studentId)
+    navigate('/parent/enrollment', { replace: true, state: { enrolled: true, classId } })
+    await loadAvailableClasses(studentId)
   }
 
   return (
@@ -91,7 +103,7 @@ function Enrollment() {
       <PageHeader title="Ghi danh lop hoc" description="Ghi danh lop thanh cong ma khong yeu cau thanh toan ngay" breadcrumb={['Phu huynh', 'Ghi danh']} />
       <Card className="content-card" style={{ marginBottom: 16 }}>
         <Steps
-          current={0}
+          current={currentStep}
           items={[
             { title: 'Chon lop' },
             { title: 'Thong tin hoc vien' },
@@ -100,6 +112,16 @@ function Enrollment() {
         />
       </Card>
       <Row gutter={[16, 16]}>
+        {completedEnrollment && (
+          <Col xs={24}>
+            <Alert
+              type="success"
+              showIcon
+              message="Ghi danh thanh cong"
+              description={`Da ghi danh vao lop ${completedEnrollment.className}. Lop se xu ly va khong yeu cau thanh toan ngay.`}
+            />
+          </Col>
+        )}
         <Col xs={24}>
           <Card className="content-card" title="Dang ky lop moi">
             <Row gutter={[12, 12]}>

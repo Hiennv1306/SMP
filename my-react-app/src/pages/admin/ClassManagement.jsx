@@ -1,5 +1,5 @@
 ﻿import { useCallback, useEffect, useState } from 'react'
-import { Button, Card, Form, Input, InputNumber, Select, Space, Progress, TimePicker, message, Tag } from 'antd'
+import { Button, Card, Form, Input, InputNumber, Select, Space, Progress, TimePicker, message, Tag, Drawer, Statistic } from 'antd'
 import dayjs from 'dayjs'
 import { PlusOutlined, EyeOutlined, EditOutlined, StopOutlined } from '@ant-design/icons'
 import { PageHeader } from '../../components/common/PageHeader'
@@ -19,6 +19,10 @@ function ClassManagement() {
   const [editing, setEditing] = useState(null)
   const [closing, setClosing] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [selectedClass, setSelectedClass] = useState(null)
+  const [classDetail, setClassDetail] = useState(null)
+  const [detailLoading, setDetailLoading] = useState(false)
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -64,6 +68,26 @@ function ClassManagement() {
     (status === 'all' || item.status === status),
   )
 
+  async function openClassDetail(record) {
+    setSelectedClass(record)
+    setDetailOpen(true)
+    setDetailLoading(true)
+    const { data, error } = await adminService.getClassDetail(record.id)
+    setDetailLoading(false)
+
+    if (error) {
+      message.error(error.message || 'Khong the tai chi tiet lop hoc.')
+      setClassDetail(null)
+      return
+    }
+    if (!data?.ok) {
+      message.error(data?.code || 'Khong the tai chi tiet lop hoc.')
+      setClassDetail(null)
+      return
+    }
+    setClassDetail(data.data)
+  }
+
   const columns = [
     { title: 'Ten lop', dataIndex: 'className', render: (value) => <strong>{value}</strong> },
     { title: 'Giao vien', dataIndex: 'teacherName' },
@@ -93,7 +117,7 @@ function ClassManagement() {
       width: 170,
       render: (_, record) => (
         <Space>
-          <Button size="small" icon={<EyeOutlined />} />
+          <Button size="small" icon={<EyeOutlined />} onClick={() => openClassDetail(record)} />
           <Button
             size="small"
             icon={<EditOutlined />}
@@ -129,6 +153,41 @@ function ClassManagement() {
 
     const firstStart = values.firstStart.format('HH:mm')
     const secondStart = values.secondStart.format('HH:mm')
+
+    function toMinutes(time) {
+      const [hour, minute] = String(time).split(':').map(Number)
+      return hour * 60 + minute
+    }
+
+    const proposedSchedules = [
+      { dayOfWeek: firstDay, startTime: firstStart, endTime: values.firstStart.add(105, 'minute').format('HH:mm') },
+      { dayOfWeek: secondDay, startTime: secondStart, endTime: values.secondStart.add(105, 'minute').format('HH:mm') },
+    ]
+
+    const conflict = rows.find((existingClass) => {
+      if (editing?.id === existingClass.id) return false
+      if (existingClass.status === 'closed' || existingClass.status === 'cancelled') return false
+      if (existingClass.teacherId !== Number(values.teacherId)) return false
+
+      return (existingClass.schedules || []).some((existingSchedule) =>
+        proposedSchedules.some((proposed) => {
+          if (existingSchedule.dayOfWeek !== proposed.dayOfWeek) return false
+
+          const existingStart = toMinutes(existingSchedule.startTime)
+          const existingEnd = toMinutes(existingSchedule.endTime)
+          const proposedStart = toMinutes(proposed.startTime)
+          const proposedEnd = toMinutes(proposed.endTime)
+
+          return proposedStart < existingEnd && existingStart < proposedEnd
+        }),
+      )
+    })
+
+    if (conflict) {
+      message.error(`Lich hoc bi trung voi lop "${conflict.className}". Vui long chon khung gio khac.`)
+      return
+    }
+
     setLoading(true)
     const payload = {
       classId: editing?.id,
@@ -270,6 +329,51 @@ function ClassManagement() {
           loadData()
         }}
       />
+      <Drawer
+        title={selectedClass?.className || 'Chi tiet lop hoc'}
+        open={detailOpen}
+        onClose={() => {
+          setDetailOpen(false)
+          setClassDetail(null)
+        }}
+        width={820}
+      >
+        {classDetail && (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+              <Card size="small"><Statistic title="Giao vien" value={classDetail.teacherName || 'Chua co'} /></Card>
+              <Card size="small"><Statistic title="Si so" value={`${classDetail.enrolled}/${classDetail.maxStudents}`} /></Card>
+              <Card size="small"><Statistic title="Do tuoi" value={`${classDetail.minAge}-${classDetail.maxAge}`} /></Card>
+              <Card size="small"><Statistic title="Trang thai" value={classDetail.status} /></Card>
+            </div>
+
+            <Card size="small" title="Lich hoc" style={{ marginBottom: 16 }}>
+              {(classDetail.schedules || []).map((schedule) => (
+                <Tag key={`${schedule.dayOfWeek}-${schedule.startTime}`} color="blue">
+                  {schedule.dayName}: {schedule.startTime} - {schedule.endTime}
+                </Tag>
+              ))}
+            </Card>
+
+            <DataTable
+              loading={detailLoading}
+              scrollX={700}
+              rowKey="id"
+              columns={[
+                { title: 'Ma hoc vien', dataIndex: 'code', width: 100 },
+                { title: 'Ho va ten hoc sinh', dataIndex: 'studentName', render: (value) => <strong>{value}</strong> },
+                { title: 'Tuoi', dataIndex: 'age', width: 70, align: 'center' },
+                { title: 'Khoi/lop', dataIndex: 'gradeLevel' },
+                { title: 'Ten phu huynh', dataIndex: 'parentName' },
+                { title: 'So dien thoai', dataIndex: 'parentPhone' },
+                { title: 'Trang thai', dataIndex: 'status', render: (value) => <StatusTag status={value} /> },
+              ]}
+              dataSource={classDetail.students || []}
+              pagination={false}
+            />
+          </>
+        )}
+      </Drawer>
     </>
   )
 }

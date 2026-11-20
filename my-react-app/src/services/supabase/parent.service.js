@@ -22,6 +22,13 @@ export async function getCurrentParent() {
 }
 
 export const parentService = {
+  getDashboardSummary: async () => {
+    const { data, error } = await requireSupabase().rpc('parent_dashboard_summary')
+    if (error) return { data: null, error }
+    if (!data?.ok) return { data: null, error: { code: data?.code, message: data?.code } }
+    return { data: data.data, error: null }
+  },
+
   getChildren: async () => {
     const client = requireSupabase()
     const { data: sessionData } = await client.auth.getSession()

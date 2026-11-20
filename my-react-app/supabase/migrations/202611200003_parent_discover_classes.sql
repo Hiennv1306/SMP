@@ -92,7 +92,14 @@ begin
       from public.enrollments e
       where e.class_id = c.id
         and e.status = 'active'
-    ) < c.max_students;
+    ) < c.max_students
+    and not exists (
+      select 1
+      from public.enrollments e
+      where e.class_id = c.id
+        and e.student_id = p_student_id
+        and e.status = 'active'
+    );
 
   return jsonb_build_object('ok', true, 'data', v_data);
 end;

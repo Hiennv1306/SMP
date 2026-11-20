@@ -124,6 +124,10 @@ export const adminService = {
 
   listClasses: () => requireSupabase().rpc('admin_list_classes'),
 
+  getClassDetail: (classId) => requireSupabase().rpc('admin_get_class_detail', {
+    p_class_id: classId,
+  }),
+
   createClass: (values) => requireSupabase().rpc('admin_create_class', {
     p_class_name: values.className,
     p_teacher_id: values.teacherId,
