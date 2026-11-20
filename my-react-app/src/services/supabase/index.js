@@ -1,0 +1,5 @@
+export { authService } from './auth.service'
+export { adminService } from './admin.service'
+export { teacherService, getCurrentTeacher } from './teacher.service'
+export { parentService, getCurrentParent } from './parent.service'
+export { testSupabaseConnection } from './connection.service'
