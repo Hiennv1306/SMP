@@ -21,6 +21,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { roleMenus } from '../constants/roleMenus'
 import { UserAvatar } from '../components/common/UserAvatar'
 import { useAuth } from '../hooks/useAuth'
+import { NotificationPermissionButton } from '../components/common/NotificationPermissionButton'
 
 const iconMap = {
   dashboard: <DashboardOutlined />,
@@ -126,7 +127,7 @@ export function AppLayout({ role = 'admin' }) {
               style={{ width: 220 }}
             />
             <Badge count={3} size="small">
-              <Button shape="circle" icon={<BellOutlined />} />
+              <NotificationPermissionButton />
             </Badge>
             <Dropdown menu={{ items: profileItems, onClick: handleProfileMenu }} placement="bottomRight">
               <div className="header-user">
