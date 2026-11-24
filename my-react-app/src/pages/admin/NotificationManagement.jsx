@@ -23,10 +23,10 @@ function NotificationManagement() {
           dataSource={notifications}
           pagination={{ pageSize: 8 }}
           columns={[
-            { title: 'Tieu De', dataIndex: 'title', render: (value) => <strong>{value}</strong> },
-            { title: 'Noi dung', dataIndex: 'content' },
-            { title: 'Thoi gian', dataIndex: 'time', width: 140 },
-            { title: 'Trang thai', dataIndex: 'status', width: 130, render: (value) => <StatusTag status={value} /> },
+            { title: 'Tiêu đề', dataIndex: 'title', render: (value) => <strong>{value}</strong> },
+            { title: 'Nội dung', dataIndex: 'content' },
+            { title: 'Thời gian', dataIndex: 'time', width: 140 },
+            { title: 'Trạng thái', dataIndex: 'status', width: 130, render: (value) => <StatusTag status={value} /> },
           ]}
         />
       </Card>

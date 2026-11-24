@@ -6,6 +6,8 @@ const statusMap = {
   pending: { text: 'Cho xu ly', color: 'warning' },
   paid: { text: 'Da thanh toan', color: 'success' },
   unpaid: { text: 'Chua thanh toan', color: 'error' },
+  refunded: { text: 'Da hoan tien', color: 'default' },
+  no_invoice: { text: 'Chua tao hoa don', color: 'warning' },
   approved: { text: 'Da duyet', color: 'success' },
   present: { text: 'Co mat', color: 'success' },
   absent: { text: 'Nghi khong phep', color: 'error' },

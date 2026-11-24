@@ -159,8 +159,54 @@ export const adminService = {
 
   listPayments: () => requireSupabase()
     .from('payments')
-    .select('*, enrollments(*, students(full_name), classes(class_name))')
+    .select(`
+      *,
+      enrollments(
+        id,
+        student_id,
+        students(
+          id,
+          full_name,
+          users:parent_id(id, full_name)
+        ),
+        classes(id, class_name)
+      )
+    `)
     .order('paid_at', { ascending: false }),
+
+  listPaymentEnrollments: () => requireSupabase()
+    .from('enrollments')
+    .select(`
+      id,
+      status,
+      student_id,
+      class_id,
+      students(
+        id,
+        full_name,
+        users:parent_id(id, full_name)
+      ),
+      classes(id, class_name),
+      payments(*)
+    `)
+    .neq('status', 'cancelled')
+    .order('id'),
+
+  generateMonthlyInvoices: (values) => requireSupabase()
+    .rpc('admin_generate_monthly_invoices', {
+      p_billing_month: values.billingMonth,
+      p_class_id: values.classId === 'all' ? null : Number(values.classId),
+    }),
+
+  confirmPayment: (paymentId) => requireSupabase()
+    .rpc('admin_confirm_payment', {
+      p_payment_id: paymentId,
+    }),
+
+  sendPaymentNotifications: (paymentIds) => requireSupabase()
+    .rpc('admin_send_payment_notifications', {
+      p_payment_ids: paymentIds,
+    }),
 
   listNotifications: () => requireSupabase()
     .from('notifications')

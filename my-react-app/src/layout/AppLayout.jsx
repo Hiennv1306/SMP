@@ -47,7 +47,7 @@ export function AppLayout({ role = 'admin' }) {
   const [collapsed, setCollapsed] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
-  const { signOut } = useAuth()
+  const { signOut, profile, user } = useAuth()
   const menuItems = roleMenus[role].map((item) => ({
     key: item.key,
     icon: iconMap[item.icon],
@@ -55,7 +55,14 @@ export function AppLayout({ role = 'admin' }) {
   }))
   const currentMenu = roleMenus[role].find((item) => item.key === location.pathname)
   const pageTitle = currentMenu?.label || 'Tong quan'
-  const roleName = roleLabels[role]
+  const accountRole = profile?.role || role
+  const roleName = roleLabels[accountRole] || roleLabels[role]
+  const accountName =
+    profile?.full_name ||
+    user?.user_metadata?.full_name ||
+    user?.email ||
+    user?.phone ||
+    'Nguoi dung'
 
   const profileItems = [
     { key: 'profile', icon: <UserOutlined />, label: 'Ho so ca nhan' },
@@ -67,7 +74,7 @@ export function AppLayout({ role = 'admin' }) {
   async function handleProfileMenu({ key }) {
     if (key !== 'logout') return
     await signOut()
-    navigate(role === 'admin' ? '/admin/login' : '/parent/login')
+    navigate(accountRole === 'admin' ? '/admin/login' : accountRole === 'teacher' ? '/teacher/login' : '/parent/login')
   }
 
   return (
@@ -131,9 +138,9 @@ export function AppLayout({ role = 'admin' }) {
             </Badge>
             <Dropdown menu={{ items: profileItems, onClick: handleProfileMenu }} placement="bottomRight">
               <div className="header-user">
-                <UserAvatar name={role === 'admin' ? 'Nguyen Quoc Anh' : role === 'teacher' ? 'Tran Minh Chau' : 'Le Thu Ha'} />
+                <UserAvatar name={accountName} />
                 <div className="header-user-copy">
-                  <strong>{role === 'admin' ? 'Nguyen Quoc Anh' : role === 'teacher' ? 'Tran Minh Chau' : 'Le Thu Ha'}</strong>
+                  <strong>{accountName}</strong>
                   <span>{roleName}</span>
                 </div>
               </div>

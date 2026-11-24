@@ -278,6 +278,11 @@ declare
   v_payment_id integer;
   v_parent_id integer;
   v_created_count integer := 0;
+  v_updated_count integer := 0;
+  v_month_start date;
+  v_month_end date;
+  v_absent_count integer;
+  v_calculated_amount numeric;
 begin
   select t.user_id
   into v_teacher_user_id
@@ -290,9 +295,18 @@ begin
     return jsonb_build_object('ok', false, 'code', 'NOT_CLASS_TEACHER');
   end if;
 
-  if p_amount is null or p_amount < 0 then
-    return jsonb_build_object('ok', false, 'code', 'INVALID_AMOUNT');
+  if p_billing_month is null
+    or p_billing_month !~ '^[0-9]{2}/[0-9]{4}$'
+    or substring(p_billing_month from 1 for 2)::integer not between 1 and 12 then
+    return jsonb_build_object('ok', false, 'code', 'INVALID_BILLING_MONTH');
   end if;
+
+  v_month_start := make_date(
+    substring(p_billing_month from 4 for 4)::integer,
+    substring(p_billing_month from 1 for 2)::integer,
+    1
+  );
+  v_month_end := (v_month_start + interval '1 month' - interval '1 day')::date;
 
   foreach v_student_id in array p_student_ids
   loop
@@ -305,6 +319,17 @@ begin
       and e.status = 'active';
 
     if v_enrollment.id is not null then
+      select count(distinct cs.session_id)
+      into v_absent_count
+      from public.attendances cs
+      join public.class_sessions s on s.id = cs.session_id
+      where cs.student_id = v_student_id
+        and s.class_id = p_class_id
+        and s.session_date between v_month_start and v_month_end
+        and cs.status = 'absent';
+
+      v_calculated_amount := greatest(8 - coalesce(v_absent_count, 0), 0) * 35000;
+
       select id
       into v_payment_id
       from public.payments
@@ -321,11 +346,19 @@ begin
         values (
           v_enrollment.id,
           p_billing_month,
-          p_amount,
+          v_calculated_amount,
           'unpaid'
         )
         returning id into v_payment_id;
         v_created_count := v_created_count + 1;
+      else
+        update public.payments
+        set amount = v_calculated_amount
+        where id = v_payment_id
+          and status = 'unpaid';
+        if found then
+          v_updated_count := v_updated_count + 1;
+        end if;
       end if;
 
       v_parent_id := v_enrollment.parent_id;
@@ -356,7 +389,8 @@ begin
   return jsonb_build_object(
     'ok', true,
     'code', 'TUITION_NOTIFICATIONS_CREATED',
-    'created_count', v_created_count
+    'createdCount', v_created_count,
+    'updatedCount', v_updated_count
   );
 end;
 $$;

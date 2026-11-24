@@ -5,6 +5,7 @@ import { PageHeader } from '../../components/common/PageHeader'
 import { DashboardCard } from '../../components/common/DashboardCard'
 import { StatusTag } from '../../components/common/StatusTag'
 import { parentService } from '../../services/supabase/parent.service'
+import { useAuth } from '../../hooks/useAuth'
 
 const dayNames = {
   1: 'Thu Hai',
@@ -17,6 +18,7 @@ const dayNames = {
 }
 
 function ParentDashboard() {
+  const { profile, user } = useAuth()
   const [dashboard, setDashboard] = useState({
     cards: [],
     children: [],
@@ -42,7 +44,11 @@ function ParentDashboard() {
 
   return (
     <>
-      <PageHeader title="Xin chao, chi Ha!" description="Tong hop hoat Dong hoc tap cua cac con" breadcrumb={['Phu huynh', 'Tong quan']} />
+      <PageHeader
+        title={`Xin chao, ${profile?.full_name || user?.user_metadata?.full_name || 'phu huynh'}!`}
+        description="Tong hop hoat dong hoc tap cua cac con"
+        breadcrumb={['Phu huynh', 'Tong quan']}
+      />
       <div className="dashboard-grid">
         {(dashboard.cards || []).map((card, index) => (
           <DashboardCard
@@ -72,21 +78,21 @@ function ParentDashboard() {
           </Card>
         </Col>
         <Col xs={24} lg={10}>
-          <Card title="Lich hoc cac con" className="content-card" loading={loading}>
+          <Card title="Lịch học của các con" className="content-card" loading={loading}>
             {(dashboard.schedules || []).length ? (
               (dashboard.schedules || []).map((item) => (
                 <div key={`${item.childId}-${item.classId}-${item.dayOfWeek}`} style={{ padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
                   <Badge dot>
-                    <strong>{item.childName}</strong>
+                    <strong>Tên con: {item.childName}</strong>
                   </Badge>
                   <div style={{ fontWeight: 600, marginTop: 4 }}>{item.className}</div>
                   <div style={{ color: '#8c96a8', fontSize: 12, marginTop: 4 }}>
-                    {dayNames[item.dayOfWeek]} • {item.startTime} - {item.endTime}
+                    Thời gian: {dayNames[item.dayOfWeek]} • {item.startTime} - {item.endTime}
                   </div>
                 </div>
               ))
             ) : (
-              <Empty description="Chua co lich hoc" />
+              <Empty description="Chưa có lịch" />
             )}
           </Card>
         </Col>

@@ -4,8 +4,10 @@ import { TeamOutlined, UserOutlined, CalendarOutlined, CheckCircleOutlined } fro
 import { PageHeader } from '../../components/common/PageHeader'
 import { DashboardCard } from '../../components/common/DashboardCard'
 import { teacherService } from '../../services/supabase/teacher.service'
+import { useAuth } from '../../hooks/useAuth'
 
 function TeacherDashboard() {
+  const { profile, user } = useAuth()
   const icons = [<TeamOutlined />, <UserOutlined />, <CalendarOutlined />, <CheckCircleOutlined />]
   const [dashboard, setDashboard] = useState({
     cards: [],
@@ -32,7 +34,11 @@ function TeacherDashboard() {
 
   return (
     <>
-      <PageHeader title="Tong quan giao vien" description="Chao co Chau, day la lich lam viec hom nay" breadcrumb={['Giao vien', 'Tong quan']} />
+      <PageHeader
+        title="Tong quan giao vien"
+        description={`Chao ${profile?.full_name || user?.user_metadata?.full_name || 'giao vien'}, day la lich lam viec hom nay`}
+        breadcrumb={['Giao vien', 'Tong quan']}
+      />
       <div className="dashboard-grid">
         {(dashboard.cards || []).map((card, index) => (
           <DashboardCard key={card.label} label={card.label} value={card.value} icon={icons[index]} />

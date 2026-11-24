@@ -239,10 +239,10 @@ function ClassManagement() {
             onChange={setStatus}
             style={{ width: 180 }}
             options={[
-              { value: 'all', label: 'Tat ca lop' },
-              { value: 'open', label: 'Dang mo' },
-              { value: 'closed', label: 'Da dong' },
-              { value: 'cancelled', label: 'Da huy' },
+              { value: 'all', label: 'Tất cả các lớp' },
+              { value: 'open', label: 'Đang mở' },
+              { value: 'closed', label: 'Đã đóng' },
+              { value: 'cancelled', label: 'Đã hủy' },
             ]}
           />
         </div>

@@ -125,7 +125,7 @@ export const parentService = {
   listPayments: async (studentId) => {
     let query = requireSupabase()
       .from('payments')
-      .select('*, enrollments!inner(student_id, classes(class_name))')
+      .select('*, enrollments!inner(student_id, students(full_name), classes(class_name))')
 
     if (studentId) query = query.eq('enrollments.student_id', studentId)
     return query.order('paid_at', { ascending: false })
